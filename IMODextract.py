@@ -1,6 +1,7 @@
+
 import os
 import argparse
-import pandas as pd
+from pandas import DataFrame
 import re
 from collections import defaultdict
 # import pprint as pp
@@ -9,10 +10,12 @@ from collections import defaultdict
 # import sys
 import subprocess
 
+#TODO change name of output files : remove .mod + add .csv or .txt
+
 parser = argparse.ArgumentParser(
     prog='IMODextract',
     description='What the program can do:',
-    epilog='MAKE SURE YOUR FILE OBTAINED WITH IMODINFO CONTAIN **ONLY** THE OBJECTS AND INFO YOU WANT TO EXTRACT')
+    epilog='MAKE SURE YOUR FILE OBTAINED WITH IMODINFO CONTAINS **ONLY** THE OBJECTS AND INFO YOU WANT TO EXTRACT')
 
 parser.add_argument('-c', '--command', action='store', choices=['l', 'v', 'u', 'b', 'o', 'n', 'e', 'p'],
                     help='Choose between \'l\'ength, \'v\'olume, \'u\'nder, \'b\'etween, \'o\'ver, \'n\'ame and'
@@ -105,7 +108,7 @@ def over():
                 last_layer = float(corner2.split(',')[-1])
                 num_layers = last_layer - first_layer + 1
                 objects[object_num] = [object_name, num_contours, num_layers]
-        df = pd.DataFrame.from_dict(objects, orient='index', columns=['Name', 'Num Contours', 'Num Layers'])
+        df = DataFrame.from_dict(objects, orient='index', columns=['Name', 'Num Contours', 'Num Layers'])
         df.to_csv('list_obj.csv', index=True)
         print(df.describe())
         print()
@@ -144,7 +147,7 @@ def over():
         else:
             print('How did you even get here?')
     else:
-        print('Possible wrong format, use command \'imodinfo\' -F [filname.mod]')
+        print('Possible wrong type of object in mod file?')
 
 def length():
     print('Extraction of length')
@@ -161,12 +164,12 @@ def length():
                 leng2 = float(re.split(', | =',leng)[2])
                 leng_f = leng2 / 1000
                 objects[object_num] = [object_name, leng_f]
-        df = pd.DataFrame.from_dict(objects, orient='index', columns=['Name', 'Length um'])
+        df = DataFrame.from_dict(objects, orient='index', columns=['Name', 'Length um'])
         df.to_csv('length.csv', index=True)
         print(df.describe())
         print()
     else:
-        print('Possible wrong format, use command \'imodinfo -L -h [filename.mod]')
+        print('Possible wrong type of object in mod file?')
 
 def point():
     print('Extraction of nb point/contour')
@@ -178,12 +181,12 @@ def point():
                 Obj_name = lines[i+1].split(':  ')[1]
                 point = lines[i+6].split(' ')[-5]
                 objects[object_num] = [Obj_name, point]
-        df = pd.DataFrame.from_dict(objects, orient='index', columns=['Name', 'Points'])
+        df = DataFrame.from_dict(objects, orient='index', columns=['Name', 'Points'])
         df.to_csv('point.csv', index=True)
         #print(df.describe())
         print()
     else:
-        print('Possible wrong format, use command \'imodinfo [filename.mod]')
+        print('Possible wrong type of object in mod file?')
 
 
 
@@ -205,13 +208,14 @@ def volume():
                 vol_mesh = float(vol_mesh_e)
                 # print('vol_mesh', vol_mesh)
                 objects[object_num] = [object_name, vol_mesh]
-        df = pd.DataFrame.from_dict(objects, orient='index',
-                                    columns=['Name', 'Volume Mesh um3'])
-        df.to_csv('volume.csv', index=True)
+        df = DataFrame.from_dict(objects, orient='index',
+                                 columns=['Name', 'Volume Mesh um3'])
+        volume_name = f"{args.input_file}{'_volume'}{'.csv'}"
+        df.to_csv(volume_name, index=True)
         print(df.describe())
         print()
     else:
-        print('Possible wrong format, use command \'imodinfo\' -F [filname.mod]')
+        print('Possible wrong type of object in mod file?')
 
 def name():
     if (lines[13].split(' ')[0] == 'OBJECT') & (lines[15].split(' ')[-1] == 'contours'):
@@ -226,7 +230,7 @@ def name():
                 name = lines[i + 1][7:]
                 named_objects[name].append(object_number)
                 objects[object_numb] = [object_number, name]
-        df = pd.DataFrame.from_dict(objects, orient='index', columns=['object_number','name'])
+        df = DataFrame.from_dict(objects, orient='index', columns=['object_number', 'name'])
 
         if args.command == 'n':
             list_name = list(df[df['name'].str.contains(selected_name, case=False)].index)
@@ -249,7 +253,7 @@ def name():
         else:
             print('How did you even get here?')
     else:
-        print('Possible wrong format, use command \'imodinfo\' -F [filname.mod]')
+        print('Possible wrong type of object in mod file?')
 
 
 commands = {
