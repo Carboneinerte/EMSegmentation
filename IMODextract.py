@@ -1,6 +1,6 @@
-
 import os
 import argparse
+import pandas as pd
 from pandas import DataFrame
 import re
 from collections import defaultdict
@@ -10,35 +10,33 @@ from collections import defaultdict
 # import sys
 import subprocess
 
-#TODO change name of output files : remove .mod + add .csv or .txt
+# TODO change name of output files : remove .mod + add .csv or .txt
 
 parser = argparse.ArgumentParser(
     prog='IMODextract',
     description='What the program can do:',
     epilog='MAKE SURE YOUR FILE OBTAINED WITH IMODINFO CONTAINS **ONLY** THE OBJECTS AND INFO YOU WANT TO EXTRACT')
 
-parser.add_argument('-c', '--command', action='store', choices=['l', 'v', 'u', 'b', 'o', 'n', 'e', 'p'],
-                    help='Choose between \'l\'ength, \'v\'olume, \'u\'nder, \'b\'etween, \'o\'ver, \'n\'ame and'
+parser.add_argument('-c', '--command', action='store', choices=['l', 'v', 'su', 'u', 'b', 'o', 'n', 'e', 'p'],
+                    help='Choose between \'l\'ength, \'v\'olume, \'su\'rface, \'u\'nder, \'b\'etween, \'o\'ver, \'n\'ame and'
                          ' \'e\'xclude, \'p\'oint', required=True)
 parser.add_argument('-s', '--selected_name', action='store', help='Name to extract or exclude, depending on c arg. Not'
                                                                   ' case sensitive, can be partial name')
 parser.add_argument('-t', '--threshold', action='store', default='5', help='set the minimum number of layers for '
                                                                            'extraction of object number \'o\'ver')
-parser.add_argument('-i', '--interval', action='store', nargs= '+', type=int, help='Interval of the number of layers to'
-                                                                                   ' extract')
+parser.add_argument('-i', '--interval', action='store', nargs='+', type=int, help='Interval of the number of layers to'
+                                                                                  ' extract')
 parser.add_argument('-f', '--file_path', action='store', default=os.getcwd(), help='Write full path to the folder '
                                                                                    'containing the file to extract from'
                     )
 
-parser.add_argument('-n', '--input_file', action='store', 
-                        help='Input mod file', required=True                                                            
+parser.add_argument('-n', '--input_file', action='store',
+                    help='Input mod file', required=True
                     )
 
-parser.add_argument('-o', '--output_file', action='store', default='imodinfo_output.txt', 
-                        help='Output filename which stores imodinfo results'                                                             
+parser.add_argument('-o', '--output_file', action='store', default='imodinfo_output.txt',
+                    help='Output filename which stores imodinfo results'
                     )
-
-
 
 # TODO: add help for the imodinfo command to use depending on the command used
 # TODO: command volume : add possibility of small volume (without e+)
@@ -59,6 +57,8 @@ args = parser.parse_args()
 # base_dir = os.getcwd()
 base_dir = args.file_path
 os.chdir(base_dir)
+
+
 # print(os.getcwd())
 
 
@@ -66,14 +66,15 @@ os.chdir(base_dir)
 # Run imodinfo with full report
 
 def imodinfo(arglist):
-    process = subprocess.run(arglist, 
-                            stdout=subprocess.PIPE, 
-                            universal_newlines=True)
+    process = subprocess.run(arglist,
+                             stdout=subprocess.PIPE,
+                             universal_newlines=True)
     lines = process.stdout.split('\n')
     f = open(args.output_file, "w")
     f.write(process.stdout)
     f.close()
     return lines
+
 
 if args.command == 'l':
     lines = imodinfo(['imodinfo', '-L -h', args.input_file])
@@ -81,15 +82,16 @@ elif args.command == 'p':
     lines = imodinfo(['imodinfo', args.input_file])
 elif args.command == 'n':
     lines = imodinfo(['imodinfo', args.input_file])
+elif args.command == 'su':
+    lines = imodinfo(['imodinfo', args.input_file])
 else:
-    lines = imodinfo(['imodinfo','-F', args.input_file])
+    lines = imodinfo(['imodinfo', '-F', args.input_file])
 
 
-
-# objects_file = args.input_file
-# with open(objects_file, 'r') as f:
-    # lines = [line.rstrip() for line in f]
-# lines = process.stdout.split('\n')
+#objects_file = args.input_file
+#with open(objects_file, 'r') as f:
+#    lines = [line.rstrip() for line in f]
+#    lines = process.stdout.split('\n')
 
 def over():
     objects = {}
@@ -149,10 +151,11 @@ def over():
     else:
         print('Possible wrong type of object in mod file?')
 
+
 def length():
     print('Extraction of length')
     lines = imodinfo(['imodinfo', '-L', '-h', args.input_file])
-    if (lines[14].split(' #')[0]=='Object') & (re.split(', | =', lines[16])[1]=='length total'):
+    if (lines[14].split(' #')[0] == 'Object') & (re.split(', | =', lines[16])[1] == 'length total'):
         objects = {}
         for i in range(len(lines)):
             if 'Object # ' in lines[i]:
@@ -161,7 +164,7 @@ def length():
                 object_num = Obj_num_name2[0]
                 object_name = Obj_num_name2[1]
                 leng = lines[i + 2]
-                leng2 = float(re.split(', | =',leng)[2])
+                leng2 = float(re.split(', | =', leng)[2])
                 leng_f = leng2 / 1000
                 objects[object_num] = [object_name, leng_f]
         df = DataFrame.from_dict(objects, orient='index', columns=['Name', 'Length um'])
@@ -171,28 +174,28 @@ def length():
     else:
         print('Possible wrong type of object in mod file?')
 
+
 def point():
     print('Extraction of nb point/contour')
-    if (lines[13].split(' ')[0]=='OBJECT') & (lines[16].split(' ')[-2]=='scattered'):
+    if (lines[13].split(' ')[0] == 'OBJECT') & (lines[16].split(' ')[-2] == 'scattered'):
         objects = {}
         for i in range(len(lines)):
             if 'OBJECT' in lines[i]:
                 object_num = lines[i].split(' ')[1]
-                Obj_name = lines[i+1].split(':  ')[1]
-                point = lines[i+6].split(' ')[-5]
+                Obj_name = lines[i + 1].split(':  ')[1]
+                point = lines[i + 6].split(' ')[-5]
                 objects[object_num] = [Obj_name, point]
         df = DataFrame.from_dict(objects, orient='index', columns=['Name', 'Points'])
         df.to_csv('point.csv', index=True)
-        #print(df.describe())
+        # print(df.describe())
         print()
     else:
         print('Possible wrong type of object in mod file?')
 
 
-
 def volume():
     print('Extraction of Volume')
-    if (lines[13].split(' #')[0] == 'Object') & (lines[28].split(' ')[2]=='Mesh'):
+    if (lines[13].split(' #')[0] == 'Object') & (lines[28].split(' ')[2] == 'Mesh'):
         objects = {}
         for i in range(len(lines)):
             if 'Object # ' in lines[i]:
@@ -216,6 +219,41 @@ def volume():
         print()
     else:
         print('Possible wrong type of object in mod file?')
+
+def surface():
+    print('surface')
+    objects_info = {}
+    current_object_name = None
+    current_contour_sum = 0
+
+    for line in lines:
+        # Identify the object name
+        if line.startswith('NAME:'):
+            if current_object_name:
+                # Save the sum for the previous object
+                objects_info[current_object_name] = current_contour_sum
+
+            # Start a new object
+            current_object_name = line.split(': ')[1].strip().strip("'")
+            current_contour_sum = 0
+
+        # Calculate the sum of values in contour lines
+        if line.startswith('\tCONTOUR'):
+            parts = line.split(',')
+            # Extract the value from the "area = " part
+            for part in parts:
+                if 'area =' in part:
+                    area_value = float(part.split('=')[1].strip())
+                    current_contour_sum += area_value
+
+    # Save the sum for the last object
+    if current_object_name:
+        objects_info[current_object_name] = current_contour_sum
+
+    df = pd.DataFrame(list(objects_info.items()), columns=['Object Name', 'Total Area'])
+
+    surface_name = f"{args.input_file}{'_surface'}{'.csv'}"
+    df.to_csv(surface_name, index=False)
 
 def name():
     if (lines[13].split(' ')[0] == 'OBJECT') & (lines[15].split(' ')[-1] == 'contours'):
@@ -264,7 +302,8 @@ commands = {
     'l': length,
     'v': volume,
     'n': name,
-    'e': name
+    'e': name,
+    'su': surface
 }
 
 func = commands.get(args.command)
@@ -272,7 +311,6 @@ if func:
     func()
 else:
     print('WRONG ARGUMENT, try again or check the help (-h)')
-
 
 # if __name__ == "__main__":
 #   main()
