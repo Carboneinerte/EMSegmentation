@@ -7,8 +7,8 @@ IMODextract -options -n INPUT_FILE
 
   -h, --help            show this help message and exit
   
-  -c {l,v,u,b,o,n,e,p}, --command {l,v,u,b,o,n,e,p}
-                        Choose between 'l'ength, 'v'olume, 'u'nder, 'b'etween,
+  -c {l,v,u,b,o,n,e,p}, --command {l,v,su,u,b,o,n,e,p}
+                        Choose between 'l'ength, 'v'olume, 'su'rface, 'u'nder, 'b'etween,
                         'o'ver, 'n'ame and 'e'xclude, 'p'oint
                         
   -s SELECTED_NAME, --selected_name SELECTED_NAME
@@ -74,3 +74,5 @@ of the threshold defined by -t (default = 5 sections)
   * Usage : Can be use to count event/structures marked by scattered point (ex: Synapses)
   * Option required : -n
   * Optional : -o -f
+
+-c 'su'
